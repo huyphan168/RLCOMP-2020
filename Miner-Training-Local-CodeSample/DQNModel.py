@@ -43,13 +43,6 @@ class DQN:
       self.model        = self.create_model() #Creating the DQN model
       self.target_model = self.create_model() #Creating the DQN target model
       
-      #Tensorflow GPU optimization
-      config = tf.compat.v1.ConfigProto()
-      config.gpu_options.allow_growth = True
-      self.sess = tf.compat.v1.Session(config=config)
-      K.set_session(sess)
-      self.sess.run( tf.compat.v1.global_variables_initializer()) 
-      
     def create_model(self):
       #Creating the network
       #Two hidden layers (300,300), their activation is ReLu
@@ -96,8 +89,8 @@ class DQN:
         else:
           Q_future = np.max(self.target_model.predict(new_state.reshape(1,len(new_state))))
           targets[i,action] = reward + Q_future * self.gamma
-      #Training
-      loss = self.model.train_on_batch(inputs, targets)  
+      with tf.device("/TPU:0"):
+        loss = self.model.train_on_batch(inputs, targets)  
     
     def target_train(self): 
       weights = self.model.get_weights()

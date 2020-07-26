@@ -97,7 +97,7 @@ class State:
         game_info = str_2_json(data)
         self.end = False
         self.score = 0
-        self.lastAction = None
+        self.lastAction = "1"
         self.id = game_info["playerId"]
         self.x = game_info["posx"]
         self.y = game_info["posy"]
