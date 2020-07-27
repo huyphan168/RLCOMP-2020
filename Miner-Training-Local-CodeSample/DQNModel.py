@@ -5,7 +5,7 @@ simplefilter(action='ignore', category=FutureWarning)
 import numpy as np
 from keras.models import Sequential
 from keras.models import model_from_json
-from keras.layers import Dense, Activation, convo
+from keras.layers import Dense, Activation
 from keras import optimizers
 from keras import backend as K
 import tensorflow as tf
@@ -22,7 +22,7 @@ class DQN:
             gamma = 0.99, #The discount factor
             epsilon = 1, #Epsilon - the exploration factor
             epsilon_min = 0.01, #The minimum epsilon 
-            epsilon_decay = 0.9995,#The decay epislon for each update_epsilon time
+            epsilon_decay = 0.9997,#The decay epislon for each update_epsilon time
             learning_rate = 0.00025, #The learning rate for the DQN network
             tau = 0.125, #The factor for updating the DQN target network from the DQN network
             model = None, #The DQN model
@@ -39,6 +39,7 @@ class DQN:
       self.learning_rate = learning_rate
       self.tau = tau
       self.loss = 0
+      self.maker = None
             
       #Creating networks
       self.model        = self.create_model() #Creating the DQN model
@@ -66,8 +67,10 @@ class DQN:
       #Get the index of the maximum Q values      
       a_max = np.argmax(self.model.predict(state.reshape(1,len(state))))      
       if (random() < self.epsilon):
+        self.maker = "Random"
         a_chosen = randrange(self.action_space)
       else:
+        self.maker = "Agent"
         a_chosen = a_max      
       return a_chosen
     

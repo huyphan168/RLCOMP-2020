@@ -6,6 +6,7 @@ from Memory import Memory # A class of creating a batch in order to store experi
 import pandas as pd
 import datetime 
 import numpy as np
+import random
 
 
 HOST = "localhost"
@@ -22,8 +23,8 @@ with open(filename, 'w') as f:
     pd.DataFrame(columns=header).to_csv(f, encoding='utf-8', index=False, header=True)
 
 # Parameters for training a DQN model
-N_EPISODE = 5000 #The number of episodes for training
-MAX_STEP = 1000   #The number of steps for each episode
+N_EPISODE = 8000 #The number of episodes for training
+MAX_STEP = 100   #The number of steps for each episode
 BATCH_SIZE = 32   #The number of experiences for each replay 
 MEMORY_SIZE = 10000 #The size of the batch for storing experiences
 SAVE_NETWORK = 500  # After this number of episodes, the DQN model is saved for testing later. 
@@ -47,8 +48,9 @@ train = False #The variable is used to indicate that the replay starts, and the 
 for episode_i in range(0, N_EPISODE):
     try:
         loss_lst = [0]
+        maker = None
         # Choosing a map in the list
-        mapID = 1 #Choosing a map ID from 5 maps in Maps folder randomly
+        mapID = random.choice([1,2,3,4,5]) #Choosing a map ID from 5 maps in Maps folder randomly
         posID_x = np.random.randint(MAP_MAX_X) #Choosing a initial position of the DQN agent on X-axes randomly
         posID_y = np.random.randint(MAP_MAX_Y) #Choosing a initial position of the DQN agent on Y-axes randomly
         #Creating a request for initializing a map, initial position, the initial energy, and the maximum number of steps of the DQN agent
@@ -65,7 +67,8 @@ for episode_i in range(0, N_EPISODE):
         maxStep = minerEnv.state.mapInfo.maxStep #Get the maximum number of steps for each episode in training
         #Start an episde for training
         for step in range(0, maxStep):
-            action = DQNAgent.act(s)  # Getting an action from the DQN model from the state (s)
+            action = DQNAgent.act(s)
+            maker = DQNAgent.maker  # Getting an action from the DQN model from the state (s)
             minerEnv.step(str(action))  # Performing the action in order to obtain the new state
             s_next = minerEnv.get_state()  # Getting a new state
             reward = minerEnv.get_reward()  # Getting a reward
@@ -88,11 +91,12 @@ for episode_i in range(0, N_EPISODE):
             total_reward = total_reward + reward #Plus the reward to the total rewad of the episode
             s = s_next #Assign the next state for the next step.
 
-            # Saving data to file
-            save_data = np.hstack(
+            # Saving data to file if the decision is belong to agent
+            if maker == "Agent":
+              save_data = np.hstack(
                 [episode_i + 1, step + 1, reward, score, total_reward, action, energy ]).reshape(1, 7)
-            with open(filename, 'a') as f:
-                pd.DataFrame(save_data).to_csv(f, encoding='utf-8', index=False, header=False)
+              with open(filename, 'a') as f:
+                  pd.DataFrame(save_data).to_csv(f, encoding='utf-8', index=False, header=False)
             
             if terminate == True:
                 #If the episode ends, then go to the next episode
@@ -104,7 +108,7 @@ for episode_i in range(0, N_EPISODE):
             #Save the DQN model
             now = datetime.datetime.now() #Get the latest datetime
 
-        
+        print(maker)
         #Print the training information after the episode
         print('Episode %d ends. Number of steps is: %d. Accumulated Reward = %.2f. Epsilon = %.2f .Score: %d .Energy: %d .Status: %d .Loss %d'  % (
             episode_i + 1, step + 1, total_reward, DQNAgent.epsilon, score, energy, status, sum(loss_lst)/(step+1)))
@@ -112,10 +116,12 @@ for episode_i in range(0, N_EPISODE):
         #Decreasing the epsilon if the replay starts
         if train == True:
             DQNAgent.update_epsilon()
-
     except Exception as e:
-        import traceback
+      import traceback
 
-        traceback.print_exc()
-        # print("Finished.")
-        break
+      traceback.print_exc()
+      print("Finished.")
+      break
+
+print("Finished")
+DQNAgent.save_model("/content/Trained_Agent/", "DQN_ver1")
