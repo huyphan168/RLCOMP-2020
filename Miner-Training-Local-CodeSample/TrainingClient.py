@@ -16,19 +16,19 @@ if len(sys.argv) == 3:
 
 # Create header for saving DQN learning file
 now = datetime.datetime.now() #Getting the latest datetime
-header = ["Ep", "Step", "Reward","Score", "Total_reward", "Action", "Epsilon", "Done", "Termination_Code"] #Defining header for the save file
+header = ["Ep", "Step", "Reward","Score", "Total_reward", "Action", "Energy"] #Defining header for the save file
 filename = "Data/data_" + now.strftime("%Y%m%d-%H%M") + ".csv" 
 with open(filename, 'w') as f:
     pd.DataFrame(columns=header).to_csv(f, encoding='utf-8', index=False, header=True)
 
 # Parameters for training a DQN model
-N_EPISODE = 10000 #The number of episodes for training
+N_EPISODE = 5000 #The number of episodes for training
 MAX_STEP = 1000   #The number of steps for each episode
 BATCH_SIZE = 32   #The number of experiences for each replay 
-MEMORY_SIZE = 100000 #The size of the batch for storing experiences
-SAVE_NETWORK = 100  # After this number of episodes, the DQN model is saved for testing later. 
-INITIAL_REPLAY_SIZE = 1000 #The number of experiences are stored in the memory batch before starting replaying
-INPUTNUM = 199 #The number of input values for the DQN model
+MEMORY_SIZE = 10000 #The size of the batch for storing experiences
+SAVE_NETWORK = 500  # After this number of episodes, the DQN model is saved for testing later. 
+INITIAL_REPLAY_SIZE = 2000 #The number of experiences are stored in the memory batch before starting replaying
+INPUTNUM = 198 #The number of input values for the DQN model
 ACTIONNUM = 6  #The number of actions output from the DQN model
 MAP_MAX_X = 21 #Width of the Map
 MAP_MAX_Y = 9  #Height of the Map
@@ -46,6 +46,7 @@ train = False #The variable is used to indicate that the replay starts, and the 
 #the main part of the deep-q learning agorithm 
 for episode_i in range(0, N_EPISODE):
     try:
+        loss_lst = []
         # Choosing a map in the list
         mapID = 1 #Choosing a map ID from 5 maps in Maps folder randomly
         posID_x = np.random.randint(MAP_MAX_X) #Choosing a initial position of the DQN agent on X-axes randomly
@@ -83,12 +84,13 @@ for episode_i in range(0, N_EPISODE):
                 batch = memory.sample(BATCH_SIZE) #Get a BATCH_SIZE experiences for replaying
                 DQNAgent.replay(batch, BATCH_SIZE)#Do relaying
                 train = True #Indicate the training starts
+                loss_lst.append(DQNAgent.loss)
             total_reward = total_reward + reward #Plus the reward to the total rewad of the episode
             s = s_next #Assign the next state for the next step.
 
             # Saving data to file
             save_data = np.hstack(
-                [episode_i + 1, step + 1, reward, score, total_reward, action, DQNAgent.epsilon, terminate ]).reshape(1, 8)
+                [episode_i + 1, step + 1, reward, score, total_reward, action, energy ]).reshape(1, 7)
             with open(filename, 'a') as f:
                 pd.DataFrame(save_data).to_csv(f, encoding='utf-8', index=False, header=False)
             
@@ -104,8 +106,8 @@ for episode_i in range(0, N_EPISODE):
 
         
         #Print the training information after the episode
-        print('Episode %d ends. Number of steps is: %d. Accumulated Reward = %.2f. Epsilon = %.2f .Score: %d .Energy: %d .Status: %d' % (
-            episode_i + 1, step + 1, total_reward, DQNAgent.epsilon, score, energy, status))
+        print('Episode %d ends. Number of steps is: %d. Accumulated Reward = %.2f. Epsilon = %.2f .Score: %d .Energy: %d .Status: %d .Loss %d'  % (
+            episode_i + 1, step + 1, total_reward, DQNAgent.epsilon, score, energy, status, sum(loss_lst)/(step+1)))
         
         #Decreasing the epsilon if the replay starts
         if train == True:

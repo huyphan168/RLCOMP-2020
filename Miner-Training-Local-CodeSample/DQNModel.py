@@ -38,6 +38,7 @@ class DQN:
       self.epsilon_decay = epsilon_decay
       self.learning_rate = learning_rate
       self.tau = tau
+      self.loss = 0
             
       #Creating networks
       self.model        = self.create_model() #Creating the DQN model
@@ -52,6 +53,8 @@ class DQN:
       model.add(Activation('relu'))
       model.add(Dense(300))
       model.add(Activation('relu'))
+      model.add(Dense(300))
+      model.add(Activation("relu"))
       model.add(Dense(self.action_space))
       model.add(Activation('linear'))    
       #adam = optimizers.adam(lr=self.learning_rate)
@@ -90,7 +93,9 @@ class DQN:
           Q_future = np.max(self.target_model.predict(new_state.reshape(1,len(new_state))))
           targets[i,action] = reward + Q_future * self.gamma
       with tf.device("/TPU:0"):
-        loss = self.model.train_on_batch(inputs, targets)  
+        loss = self.model.train_on_batch(inputs, targets)
+        self.loss = loss
+          
     
     def target_train(self): 
       weights = self.model.get_weights()
