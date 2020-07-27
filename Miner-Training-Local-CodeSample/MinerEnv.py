@@ -101,7 +101,6 @@ class MinerEnv:
         if self.state.lastAction == 4:
           reward += 1.25
         
-        
         # If out of the map, then the DQN agent should be punished by a larger nagative reward.
         if self.state.status == State.STATUS_ELIMINATED_WENT_OUT_MAP:
             reward += -15

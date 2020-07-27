@@ -23,11 +23,10 @@ with open(filename, 'w') as f:
     pd.DataFrame(columns=header).to_csv(f, encoding='utf-8', index=False, header=True)
 
 # Parameters for training a DQN model
-N_EPISODE = 8000 #The number of episodes for training
+N_EPISODE = 6000 #The number of episodes for training
 MAX_STEP = 100   #The number of steps for each episode
 BATCH_SIZE = 32   #The number of experiences for each replay 
-MEMORY_SIZE = 10000 #The size of the batch for storing experiences
-SAVE_NETWORK = 500  # After this number of episodes, the DQN model is saved for testing later. 
+MEMORY_SIZE = 12000 #The size of the batch for storing experiences
 INITIAL_REPLAY_SIZE = 3000 #The number of experiences are stored in the memory batch before starting replaying
 INPUTNUM = 198 #The number of input values for the DQN model
 ACTIONNUM = 6  #The number of actions output from the DQN model
@@ -50,7 +49,7 @@ for episode_i in range(0, N_EPISODE):
         loss_lst = [0]
         maker = None
         # Choosing a map in the list
-        mapID = random.choice([1,2,3,4,5]) #Choosing a map ID from 5 maps in Maps folder randomly
+        mapID = random.choice([1,2]) #Choosing a map ID from 5 maps in Maps folder randomly
         posID_x = np.random.randint(MAP_MAX_X) #Choosing a initial position of the DQN agent on X-axes randomly
         posID_y = np.random.randint(MAP_MAX_Y) #Choosing a initial position of the DQN agent on Y-axes randomly
         #Creating a request for initializing a map, initial position, the initial energy, and the maximum number of steps of the DQN agent
@@ -87,6 +86,7 @@ for episode_i in range(0, N_EPISODE):
                 batch = memory.sample(BATCH_SIZE) #Get a BATCH_SIZE experiences for replaying
                 DQNAgent.replay(batch, BATCH_SIZE)#Do relaying
                 train = True #Indicate the training starts
+                DQNAgent.target_train()
                 loss_lst.append(DQNAgent.loss)
             total_reward = total_reward + reward #Plus the reward to the total rewad of the episode
             s = s_next #Assign the next state for the next step.
@@ -101,13 +101,6 @@ for episode_i in range(0, N_EPISODE):
             if terminate == True:
                 #If the episode ends, then go to the next episode
                 break
-
-        # Iteration to save the network architecture and weights
-        if (np.mod(episode_i + 1, SAVE_NETWORK) == 0 and train == True):
-            DQNAgent.target_train()  # Replace the learning weights for target model with soft replacement
-            #Save the DQN model
-            now = datetime.datetime.now() #Get the latest datetime
-
         print(maker)
         #Print the training information after the episode
         print('Episode %d ends. Number of steps is: %d. Accumulated Reward = %.2f. Epsilon = %.2f .Score: %d .Energy: %d .Status: %d .Loss %d'  % (
