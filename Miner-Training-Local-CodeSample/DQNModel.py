@@ -5,7 +5,7 @@ simplefilter(action='ignore', category=FutureWarning)
 import numpy as np
 from keras.models import Sequential
 from keras.models import model_from_json
-from keras.layers import Dense, Activation
+from keras.layers import Dense, Activation, convo
 from keras import optimizers
 from keras import backend as K
 import tensorflow as tf
@@ -22,7 +22,7 @@ class DQN:
             gamma = 0.99, #The discount factor
             epsilon = 1, #Epsilon - the exploration factor
             epsilon_min = 0.01, #The minimum epsilon 
-            epsilon_decay = 0.999,#The decay epislon for each update_epsilon time
+            epsilon_decay = 0.9995,#The decay epislon for each update_epsilon time
             learning_rate = 0.00025, #The learning rate for the DQN network
             tau = 0.125, #The factor for updating the DQN target network from the DQN network
             model = None, #The DQN model
@@ -53,8 +53,6 @@ class DQN:
       model.add(Activation('relu'))
       model.add(Dense(300))
       model.add(Activation('relu'))
-      model.add(Dense(300))
-      model.add(Activation("relu"))
       model.add(Dense(self.action_space))
       model.add(Activation('linear'))    
       #adam = optimizers.adam(lr=self.learning_rate)

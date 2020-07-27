@@ -27,7 +27,7 @@ MAX_STEP = 1000   #The number of steps for each episode
 BATCH_SIZE = 32   #The number of experiences for each replay 
 MEMORY_SIZE = 10000 #The size of the batch for storing experiences
 SAVE_NETWORK = 500  # After this number of episodes, the DQN model is saved for testing later. 
-INITIAL_REPLAY_SIZE = 2000 #The number of experiences are stored in the memory batch before starting replaying
+INITIAL_REPLAY_SIZE = 3000 #The number of experiences are stored in the memory batch before starting replaying
 INPUTNUM = 198 #The number of input values for the DQN model
 ACTIONNUM = 6  #The number of actions output from the DQN model
 MAP_MAX_X = 21 #Width of the Map
@@ -46,7 +46,7 @@ train = False #The variable is used to indicate that the replay starts, and the 
 #the main part of the deep-q learning agorithm 
 for episode_i in range(0, N_EPISODE):
     try:
-        loss_lst = []
+        loss_lst = [0]
         # Choosing a map in the list
         mapID = 1 #Choosing a map ID from 5 maps in Maps folder randomly
         posID_x = np.random.randint(MAP_MAX_X) #Choosing a initial position of the DQN agent on X-axes randomly
