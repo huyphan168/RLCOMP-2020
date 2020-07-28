@@ -23,15 +23,16 @@ with open(filename, 'w') as f:
     pd.DataFrame(columns=header).to_csv(f, encoding='utf-8', index=False, header=True)
 
 # Parameters for training a DQN model
-N_EPISODE = 6000 #The number of episodes for training
+N_EPISODE = 5000 #The number of episodes for training
 MAX_STEP = 100   #The number of steps for each episode
 BATCH_SIZE = 32   #The number of experiences for each replay 
-MEMORY_SIZE = 12000 #The size of the batch for storing experiences
-INITIAL_REPLAY_SIZE = 3000 #The number of experiences are stored in the memory batch before starting replaying
+MEMORY_SIZE = 100000 #The size of the batch for storing experiences
+INITIAL_REPLAY_SIZE = 2000 #The number of experiences are stored in the memory batch before starting replaying
 INPUTNUM = 198 #The number of input values for the DQN model
 ACTIONNUM = 6  #The number of actions output from the DQN model
 MAP_MAX_X = 21 #Width of the Map
 MAP_MAX_Y = 9  #Height of the Map
+update_peri = 100
 
 # Initialize a DQN model and a memory batch for storing experiences
 DQNAgent = DQN(INPUTNUM, ACTIONNUM)
@@ -56,7 +57,8 @@ for episode_i in range(0, N_EPISODE):
         request = ("map" + str(mapID) + "," + str(posID_x) + "," + str(posID_y) + ",50,100") 
         #Send the request to the game environment (GAME_SOCKET_DUMMY.py)
         minerEnv.send_map_info(request)
-
+        mine_bound = random.choice([i for i in range(4)])
+        mine_explore = 1
         # Getting the initial state
         minerEnv.reset() #Initialize the game environment
         s = minerEnv.get_state()#Get the state after reseting. 
@@ -66,7 +68,12 @@ for episode_i in range(0, N_EPISODE):
         maxStep = minerEnv.state.mapInfo.maxStep #Get the maximum number of steps for each episode in training
         #Start an episde for training
         for step in range(0, maxStep):
-            action = DQNAgent.act(s)
+            gold = minerEnv.state.mapInfo.golds
+            posx = minerEnv.state.x
+            posy = minerEnv.state.y
+            action, mine_incre = DQNAgent.act(s, gold, posx, posy, mine_explore, mine_bound)
+            if mine_incre:
+                mine_explore += 1
             maker = DQNAgent.maker  # Getting an action from the DQN model from the state (s)
             minerEnv.step(str(action))  # Performing the action in order to obtain the new state
             s_next = minerEnv.get_state()  # Getting a new state
@@ -86,7 +93,6 @@ for episode_i in range(0, N_EPISODE):
                 batch = memory.sample(BATCH_SIZE) #Get a BATCH_SIZE experiences for replaying
                 DQNAgent.replay(batch, BATCH_SIZE)#Do relaying
                 train = True #Indicate the training starts
-                DQNAgent.target_train()
                 loss_lst.append(DQNAgent.loss)
             total_reward = total_reward + reward #Plus the reward to the total rewad of the episode
             s = s_next #Assign the next state for the next step.
@@ -101,7 +107,8 @@ for episode_i in range(0, N_EPISODE):
             if terminate == True:
                 #If the episode ends, then go to the next episode
                 break
-        print(maker)
+        if ((episode_i+1) % update_peri == 0) and train == True:
+            DQNAgent.target_train()
         #Print the training information after the episode
         print('Episode %d ends. Number of steps is: %d. Accumulated Reward = %.2f. Epsilon = %.2f .Score: %d .Energy: %d .Status: %d .Loss %d'  % (
             episode_i + 1, step + 1, total_reward, DQNAgent.epsilon, score, energy, status, sum(loss_lst)/(step+1)))
