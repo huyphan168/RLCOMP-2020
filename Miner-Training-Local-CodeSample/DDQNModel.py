@@ -63,16 +63,25 @@ class DQN:
       return model
   
     
-    def act(self,state):
-      #Get the index of the maximum Q values      
+    def act(self,state, gold, x, y, mine_explore, mine_bound):
+      #Get the index of the maximum Q values
+      guided_mine = False
       a_max = np.argmax(self.model.predict(state.reshape(1,len(state))))      
       if (random() < self.epsilon):
         self.maker = "Random"
-        a_chosen = randrange(self.action_space)
+        for cell in gold:
+            if cell(["posx"], cell["posy"]) == (x, y):
+               a_chosen = 5
+               guided_mine = True
+         if guided_mine:
+            return a_chosen, guided_mine
+         else:
+            a_chosen = randrange(self.action_space)
+            return a_chosen, guided_mine
       else:
         self.maker = "Agent"
         a_chosen = a_max      
-      return a_chosen
+      return a_chosen, guided_mine
     
     
     def replay(self,samples,batch_size):
