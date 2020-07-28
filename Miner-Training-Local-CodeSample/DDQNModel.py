@@ -70,12 +70,12 @@ class DQN:
       if (random() < self.epsilon):
         self.maker = "Random"
         for cell in gold:
-            if cell(["posx"], cell["posy"]) == (x, y):
+            if (cell["posx"], cell["posy"]) == (x, y):
                a_chosen = 5
                guided_mine = True
-         if guided_mine:
+        if guided_mine:
             return a_chosen, guided_mine
-         else:
+        else:
             a_chosen = randrange(self.action_space)
             return a_chosen, guided_mine
       else:

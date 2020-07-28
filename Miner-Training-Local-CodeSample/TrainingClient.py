@@ -1,5 +1,5 @@
 import sys
-from DQNModel import DQN # A class of creating a deep q-learning model
+from DDQNModel import DQN # A class of creating a deep q-learning model
 from MinerEnv import MinerEnv # A class of creating a communication environment between the DQN model and the GameMiner environment (GAME_SOCKET_DUMMY.py)
 from Memory import Memory # A class of creating a batch in order to store experiences for the training process
 
@@ -57,7 +57,7 @@ for episode_i in range(0, N_EPISODE):
         request = ("map" + str(mapID) + "," + str(posID_x) + "," + str(posID_y) + ",50,100") 
         #Send the request to the game environment (GAME_SOCKET_DUMMY.py)
         minerEnv.send_map_info(request)
-        mine_bound = random.choice([i for i in range(4)])
+        mine_bound = random.choice([i for i in range(3)])
         mine_explore = 1
         # Getting the initial state
         minerEnv.reset() #Initialize the game environment
