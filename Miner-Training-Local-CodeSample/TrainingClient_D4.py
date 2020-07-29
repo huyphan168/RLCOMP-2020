@@ -1,7 +1,7 @@
 import sys
-from RainbowModel import RainbowAgent
+from  Duelling_DDQN_PER_Model import D3PAgent
 from MinerEnv import MinerEnv 
-from Memory_PER import ReplayBuffer, PrioritizedReplayBuffer
+from Memory_PER import PrioritizedReplayBuffer
 
 import pandas as pd
 import datetime 
@@ -22,11 +22,11 @@ filename = "Data/data_" + now.strftime("%Y%m%d-%H%M") + ".csv"
 with open(filename, 'w') as f:
     pd.DataFrame(columns=header).to_csv(f, encoding='utf-8', index=False, header=True)
 #Traing Parameters
-N_EPISODE = 6000 
+N_EPISODE = 7000 
 MAX_STEP = 100  
 BATCH_SIZE = 32    
 MEMORY_SIZE = 100000
-INITIAL_REPLAY_SIZE = 2000 
+INITIAL_REPLAY_SIZE = 1000 
 INPUTNUM = 198 
 ACTIONNUM = 6  
 MAP_MAX_X = 21 
@@ -38,15 +38,9 @@ update_target = 10000
 alpha = 0.2
 beta = 0.6
 prior_eps = 1e-6
-#N-step memory and learning
-N_STEP = 2
-gamma = 0.99
-#Initialize device
-device = "cuda:0" if torch.cuda.is_available() else "cpu"
 #Initialize Agent and memory
-Agent = RainbowAgent(INPUTNUM, ACTIONNUM, device, n_step = N_STEP)
+Agent = D3PAgent(INPUTNUM, ACTIONNUM)
 memory = PrioritizedReplayBuffer(INPUTNUM, MEMORY_SIZE, BATCH_SIZE, alpha=alpha)
-memory_n = ReplayBuffer(INPUTNUM, MEMORY_SIZE, BATCH_SIZE, N_STEP , gamma=gamma)
 
 # Initialize environment
 minerEnv = MinerEnv(HOST, PORT) 
@@ -95,11 +89,8 @@ for episode_i in range(0, N_EPISODE):
             s_next = minerEnv.get_state()  
             reward = minerEnv.get_reward() 
             terminate = minerEnv.check_terminate()
-            #Storing memory into 2 mem
             transition += [reward, s_next, terminate]  
-            one_step_transition = memory_n.store(*transition)
-            if one_step_transition:
-              memory.store(*one_step_transition)
+            memory.store(*transition)
             #Updating PER parameters
             fraction = min(episode_i / N_EPISODE, 1.0)
             beta = beta + fraction*(1-beta)
@@ -113,18 +104,17 @@ for episode_i in range(0, N_EPISODE):
                 #Sampling memory batch
                 samples_per = memory.sample_batch(beta)
                 indices_per = samples_per["indices"]
-                samples_n_step = memory_n.sample_batch_from_idxs(indices_per)
                 #Replaying memory for training Agent
-                loss_, loss_for_prior = Agent.replay(samples_per, samples_n_step)
+                loss_for_prior = Agent.replay(samples_per)
                 #Storing loss
-                loss_lst.append(loss_)
+                loss_lst.append(Agent.loss)
                 #Updating priorities for PER
-                new_priorities = loss_for_prior + prior_eps 
+                new_priorities = loss_for_prior + prior_eps
                 memory.update_priorities(indices_per, new_priorities)
                 #Updating target_network
                 update_cnt += 1
                 if (update_cnt % update_target) == 0:
-                  Agent._target_hard_update()
+                  Agent.target_train()
             #Accumalated reward     
             total_reward = total_reward + reward 
             #Assigning new state 
@@ -139,8 +129,8 @@ for episode_i in range(0, N_EPISODE):
             if terminate == True:
                 break
         #Print the training information after the episode
-        print('Episode %d ends. Number of steps is: %d. Accumulated Reward = %.2f. Epsilon = %.2f .Score: %d .Energy: %d .Status: %d .Loss %.4f'  % (
-            episode_i + 1, step + 1, total_reward, Agent.epsilon, score, energy, status, sum(loss_lst)/(step+1)))       
+        print('Episode {} ends. Number of steps is: {}. Accumulated Reward = {}. Epsilon = {} .Score: {} .Energy: {} .Status: {}. Loss {}'.format(
+            episode_i + 1, step + 1, total_reward, round(Agent.epsilon,2), score, energy, status, round(sum(loss_lst)/(step+1), 3)))       
         #Decreasing the epsilon if the replay starts
         if train == True:
             Agent.update_epsilon()

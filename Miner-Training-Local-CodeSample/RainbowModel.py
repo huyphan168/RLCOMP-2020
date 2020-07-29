@@ -45,7 +45,7 @@ class RainbowAgent:
         batch_size : int = 32,
         epsilon = 1,
         epsilon_min = 0.1,
-        epsilon_decay = 0.995,
+        epsilon_decay = 0.9996,
         # Categorical DQN parameters
         v_min: float = 0.0,
         v_max: float = 200.0,
@@ -106,19 +106,19 @@ class RainbowAgent:
         self.dqn_target.eval()
         
         # optimizer
-        self.optimizer = optim.Adam(self.dqn.parameters())
+        self.optimizer = optim.Adam(self.dqn.parameters(), lr = 0.01)
 
     def act(self, state, gold, x, y, mine_explore, mine_bound):
         """Select an action from the input state."""
-        guided_mine = False
         prediction = self.dqn(torch.FloatTensor(state).to(self.device)).argmax()
-        a_max = int(prediction.detach().cpu().numpy())
+        a_max = int(prediction.detach().cpu().numpy())         
+        guided_mine = False     
         if (random() < self.epsilon):
           self.maker = "Random"
           for cell in gold:
-            if (cell["posx"], cell["posy"]) == (x, y):
-               a_chosen = 5
-               guided_mine = True
+              if (cell["posx"], cell["posy"]) == (x, y):
+                a_chosen = 5
+                guided_mine = True
           if guided_mine:
               return a_chosen, guided_mine
           else:
@@ -143,18 +143,17 @@ class RainbowAgent:
         # we are gonna combine 1-step loss and n-step loss so as to
         # prevent high-variance. The original rainbow employs n-step loss only.
         gamma = self.gamma ** self.n_step
-        elementwise_loss_n_loss = self._compute_dqn_loss(samples_n_step, gamma)
+        elementwise_loss_n_loss = self._compute_dqn_loss(samples_n_step, self.gamma)
         elementwise_loss += elementwise_loss_n_loss
         # PER: importance sampling before average
-        loss = torch.mean(elementwise_loss * weights)
         self.optimizer.zero_grad()
         loss.backward()
-        clip_grad_norm_(self.dqn.parameters(), 10.0)
-        self.optimizer.step()  
+        self.optimizer.step()
         # PER: update priorities
         loss_for_prior = elementwise_loss.detach().cpu().numpy()
         return loss.item(), loss_for_prior
 
+        grad_output = grad_output.data
     def _compute_dqn_loss(self, samples: Dict[str, np.ndarray], gamma: float) -> torch.Tensor:
         """Return categorical dqn loss."""
         device = self.device  
