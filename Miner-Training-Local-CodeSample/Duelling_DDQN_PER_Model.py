@@ -24,7 +24,7 @@ class D3PAgent:
             gamma = 0.99, #The discount factor
             epsilon = 1, #Epsilon - the exploration factor
             epsilon_min = 0.01, #The minimum epsilon 
-            epsilon_decay = 0.9997,#The decay epislon for each update_epsilon time
+            epsilon_decay = 0.9995,#The decay epislon for each update_epsilon time
             learning_rate = 0.00025, #The learning rate for the DQN network
             tau = 0.125, #The factor for updating the DQN target network from the DQN network
             model = None, #The DQN model
@@ -51,6 +51,8 @@ class D3PAgent:
       self.model.compile(optimizer = sgd,
               loss='mse')
       self.target_model.compile(optimizer = sgd, loss= "mse")
+      weights_ = self.model.get_weights()
+      self.target_model.set_weights(weights_) 
 
 
     def act(self,state, gold, x, y, mine_explore, mine_bound):
@@ -126,12 +128,11 @@ init = keras.initializers.he_normal()
 def Model(obs_dim, hidden_size, num_actions, dueling):
     X_input = keras.layers.Input(shape = (obs_dim,))
     feature = Dense(hidden_size, input_dim = obs_dim, activation = "relu", kernel_initializer = init)(X_input)
-    feature = Dense(hidden_size, activation = "relu", kernel_initializer = init)(feature)
     adv = Dense(hidden_size, activation = "relu", kernel_initializer = init)(feature)
-    adv = Dense(num_actions, activation = "relu", kernel_initializer = init)(adv)
+    adv = Dense(num_actions,activation = "linear", kernel_initializer = init)(adv)
     if dueling:
         value = Dense(hidden_size, input_dim = obs_dim, activation = "relu", kernel_initializer = init)(feature)
-        value = Dense(1, activation = "relu", kernel_initializer = init)(value)
+        value = Dense(1, activation = "linear", kernel_initializer = init)(value)
         adv_norm = keras.layers.Lambda(lambda x: x - tf.reduce_mean(x))(adv)
         combine = keras.layers.Add()([value, adv])
     if dueling:

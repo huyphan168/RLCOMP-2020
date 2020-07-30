@@ -22,9 +22,9 @@ class DQN:
             gamma = 0.99, #The discount factor
             epsilon = 1, #Epsilon - the exploration factor
             epsilon_min = 0.01, #The minimum epsilon 
-            epsilon_decay = 0.9995,#The decay epislon for each update_epsilon time
+            epsilon_decay = 0.9996,#The decay epislon for each update_epsilon time
             learning_rate = 0.00025, #The learning rate for the DQN network
-            tau = 0.001, #The factor for updating the DQN target network from the DQN network
+            tau = 0.125, #The factor for updating the DQN target network from the DQN network
             model = None, #The DQN model
             target_model = None, #The DQN target model 
             sess=None

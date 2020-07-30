@@ -23,11 +23,11 @@ with open(filename, 'w') as f:
     pd.DataFrame(columns=header).to_csv(f, encoding='utf-8', index=False, header=True)
 
 # Parameters for training a DQN model
-N_EPISODE = 5000 #The number of episodes for training
+N_EPISODE = 10000 #The number of episodes for training
 MAX_STEP = 100   #The number of steps for each episode
 BATCH_SIZE = 32   #The number of experiences for each replay 
 MEMORY_SIZE = 100000 #The size of the batch for storing experiences
-INITIAL_REPLAY_SIZE = 2000 #The number of experiences are stored in the memory batch before starting replaying
+INITIAL_REPLAY_SIZE = 1000 #The number of experiences are stored in the memory batch before starting replaying
 INPUTNUM = 198 #The number of input values for the DQN model
 ACTIONNUM = 6  #The number of actions output from the DQN model
 MAP_MAX_X = 21 #Width of the Map
