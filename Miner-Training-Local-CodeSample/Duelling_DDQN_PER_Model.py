@@ -47,8 +47,11 @@ class D3PAgent:
       #Creating networks
       self.model        = Model(self.input_dim, 300, self.action_space, True) #Creating the DQN model
       self.target_model = Model(self.input_dim, 300, self.action_space, True) #Creating the DQN target model
-      self.model.compile(optimizer=keras.optimizers.Adam(), loss="mean_squared_error")
-      self.target_model.set_weights(self.model.get_weights())
+      sgd = optimizers.SGD(lr=self.learning_rate, decay=1e-6, momentum=0.95)
+      self.model.compile(optimizer = sgd,
+              loss='mse')
+      self.target_model.compile(optimizer = sgd, loss= "mse")
+
 
     def act(self,state, gold, x, y, mine_explore, mine_bound):
       #Get the index of the maximum Q values
@@ -71,35 +74,28 @@ class D3PAgent:
       return int(a_chosen), guided_mine
     
     
-    def replay(self,samples_per):
-
-      state = np.zeros((self.batch_size, self.input_dim))
-      next_state = np.zeros((self.batch_size, self.input_dim))
-      action, reward, done = [], [], []
-      for i in range(self.batch_size):
-          state[i] = samples_per["obs"][i]
-          action.append(samples_per["acts"][i])
-          reward.append(samples_per["rews"][i])
-          next_state[i] = samples_per["next_obs"][i]
-          done.append(samples_per["done"][i])
-      action = [int(ac) for ac in action]
-      target = self.model.predict(state)
-      target_old = np.array(target)
-      target_next = self.model.predict(next_state)
-      target_val = self.target_model.predict(next_state)
-      for i in range(len(samples_per)):
-          if done[i]:
-            target[i][action[i]] = reward[i]
-          else:
-            a = np.argmax(target_next[i])
-            target[i][action[i]] = reward[i] + self.gamma * (target_val[i][a])
-      indices = np.arange(self.batch_size, dtype=np.int32)
-      loss = target_old[indices, np.array(action)]-target[indices, np.array(action)]
-      error = np.abs(target_old[indices, np.array(action)]-target[indices, np.array(action)])
-      with tf.device("/GPU:0"):  
-          loss = self.model.train_on_batch(state, target)
-          self.loss = loss
-      return error
+    def replay(self,samples,batch_size):
+      inputs = np.zeros((batch_size, self.input_dim))
+      targets = np.zeros((batch_size, self.action_space))
+      
+      for i in range(0,batch_size):
+        state = samples[0][i,:]
+        action = samples[1][i]
+        reward = samples[2][i]
+        new_state = samples[3][i,:]
+        done= samples[4][i]
+        
+        inputs[i,:] = state
+        targets[i,:] = self.target_model.predict(state.reshape(1,len(state)))        
+        if done:
+          targets[i,action] = reward # if terminated, only equals reward
+        else:
+          action_pri = np.argmax(self.model.predict(new_state.reshape(1, len(new_state))))
+          Q_future = self.target_model.predict(new_state.reshape(1,len(new_state)))[0][action_pri]
+          targets[i,action] = reward + Q_future * self.gamma
+      with tf.device("/TPU:0"):
+        loss = self.model.train_on_batch(inputs, targets)
+        self.loss = loss
               
     def target_train(self): 
       weights = self.model.get_weights()

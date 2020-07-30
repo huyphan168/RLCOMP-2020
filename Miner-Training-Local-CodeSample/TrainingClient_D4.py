@@ -1,7 +1,7 @@
 import sys
 from  Duelling_DDQN_PER_Model import D3PAgent
 from MinerEnv import MinerEnv 
-from Memory_PER import PrioritizedReplayBuffer
+from Memory import Memory
 
 import pandas as pd
 import datetime 
@@ -40,7 +40,7 @@ beta = 0.6
 prior_eps = 1e-6
 #Initialize Agent and memory
 Agent = D3PAgent(INPUTNUM, ACTIONNUM)
-memory = PrioritizedReplayBuffer(INPUTNUM, MEMORY_SIZE, BATCH_SIZE, alpha=alpha)
+memory = Memory(MEMORY_SIZE)
 
 # Initialize environment
 minerEnv = MinerEnv(HOST, PORT) 
@@ -89,28 +89,28 @@ for episode_i in range(0, N_EPISODE):
             s_next = minerEnv.get_state()  
             reward = minerEnv.get_reward() 
             terminate = minerEnv.check_terminate()
-            transition += [reward, s_next, terminate]  
-            memory.store(*transition)
+            transition += [reward, terminate, s_next]  
+            memory.push(*transition)
             #Updating PER parameters
-            fraction = min(episode_i / N_EPISODE, 1.0)
-            beta = beta + fraction*(1-beta)
+            #fraction = min(episode_i / N_EPISODE, 1.0)
+            #beta = beta + fraction*(1-beta)
             #Step data
             score = minerEnv.state.score
             energy = minerEnv.state.energy
             status = minerEnv.state.status
-            if (len(memory) > INITIAL_REPLAY_SIZE):
+            if (memory.length > INITIAL_REPLAY_SIZE):
                 #Signal that begin training process
                 train = True
                 #Sampling memory batch
-                samples_per = memory.sample_batch(beta)
-                indices_per = samples_per["indices"]
+                samples = memory.sample(BATCH_SIZE)
+                #indices_per = samples_per["indices"]
                 #Replaying memory for training Agent
-                loss_for_prior = Agent.replay(samples_per)
+                Agent.replay(samples, BATCH_SIZE)
                 #Storing loss
                 loss_lst.append(Agent.loss)
                 #Updating priorities for PER
-                new_priorities = loss_for_prior + prior_eps
-                memory.update_priorities(indices_per, new_priorities)
+                #new_priorities = loss_for_prior + prior_eps
+                #memory.update_priorities(indices_per, new_priorities)
                 #Updating target_network
                 update_cnt += 1
                 if (update_cnt % update_target) == 0:
