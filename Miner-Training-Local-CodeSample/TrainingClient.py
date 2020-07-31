@@ -1,8 +1,8 @@
 import sys
-from DDQNModel import DQN # A class of creating a deep q-learning model
+from DDQN_torch import DQN # A class of creating a deep q-learning model
 from MinerEnv import MinerEnv # A class of creating a communication environment between the DQN model and the GameMiner environment (GAME_SOCKET_DUMMY.py)
 from Memory import Memory # A class of creating a batch in order to store experiences for the training process
-
+import torch
 import pandas as pd
 import datetime 
 import numpy as np
@@ -32,10 +32,10 @@ INPUTNUM = 198 #The number of input values for the DQN model
 ACTIONNUM = 6  #The number of actions output from the DQN model
 MAP_MAX_X = 21 #Width of the Map
 MAP_MAX_Y = 9  #Height of the Map
-update_peri = 100
-
+update_peri = 10000
+device = "cuda:0" if torch.cuda.is_available() else "cpu"
 # Initialize a DQN model and a memory batch for storing experiences
-DQNAgent = DQN(INPUTNUM, ACTIONNUM)
+DQNAgent = DQN(INPUTNUM, ACTIONNUM, device)
 memory = Memory(MEMORY_SIZE)
 
 # Initialize environment
@@ -79,12 +79,13 @@ for episode_i in range(0, N_EPISODE):
             s_next = minerEnv.get_state()  # Getting a new state
             reward = minerEnv.get_reward()  # Getting a reward
             terminate = minerEnv.check_terminate()  # Checking the end status of the episode
+            done = 1 if terminate is True else 0
             score = minerEnv.state.score
             energy = minerEnv.state.energy
             status = minerEnv.state.status
 
             # Add this transition to the memory batch
-            memory.push(s, action, reward, terminate, s_next)
+            memory.push(s, action, reward, done , s_next)
 
             # Sample batch memory to train network
             if (memory.length > INITIAL_REPLAY_SIZE):
