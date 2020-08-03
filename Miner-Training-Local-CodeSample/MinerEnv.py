@@ -86,16 +86,16 @@ class MinerEnv:
             reward -= 2
         if self.state.mapInfo.get_obstacle(self.state.x, self.state.y) == SwampID:  # Swamp
             reward -= 3
-        if self.state.mapInfo.is_row_has_gold(self.state.x):
-          if self.state.lastAction in [2,3]:
-            reward += 1
-          else:
-            reward += 0.5
-        if self.state.mapInfo.is_column_has_gold(self.state.x):
-          if self.state.lastAction in [0,1]:
-            reward += 1
-          else:
-            reward += 0.5
+        # if self.state.mapInfo.is_row_has_gold(self.state.x):
+        #   if self.state.lastAction in [2,3]:
+        #     reward += 1
+        #   else:
+        #     reward += 0.5
+        # if self.state.mapInfo.is_column_has_gold(self.state.x):
+        #   if self.state.lastAction in [0,1]:
+        #     reward += 1
+        #   else:
+        #     reward += 0.5
         if self.state.lastAction == 4 and self.state.energy > 40:
           reward -= 3
         if self.state.lastAction == 4:
@@ -114,3 +114,4 @@ class MinerEnv:
         #Checking the status of the game
         #it indicates the game ends or is playing
         return self.state.status != State.STATUS_PLAYING
+
