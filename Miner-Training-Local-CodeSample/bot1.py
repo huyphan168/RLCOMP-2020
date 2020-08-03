@@ -41,14 +41,13 @@ class Bot_ver1:
     ACTION_GO_DOWN = 3
     ACTION_FREE = 4
     ACTION_CRAFT = 5
-    def network()
 
     def __init__(self, id):
         self.state = State()
         self.info = PlayerInfo(id)
         self.dqn = Network(198, 6)
         self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
-        self.dqn.load_state_dict(torch.load("/content/rlcomp2020/Miner-Training-Local-CodeSample/TrainedModels/AGENT1_30000.pth"))
+        self.dqn.load_state_dict(torch.load("/content/AGENT1_30000.pth"))
         print("Model loaded for bot 1")
         self.dqn.to(self.device)
     def next_action(self):
@@ -56,7 +55,7 @@ class Bot_ver1:
         action = self.dqn(STATE_NET).argmax()
         action = action.detach().cpu().numpy()  
         action = int(action)
-            return action
+        return action
 
     def new_game(self, data):
         try:
@@ -70,11 +69,11 @@ class Bot_ver1:
         view = np.zeros([self.state.mapInfo.max_x + 1, self.state.mapInfo.max_y + 1], dtype=int)
         for i in range(self.state.mapInfo.max_x + 1):
             for j in range(self.state.mapInfo.max_y + 1):
-                if self.state.mapInfo.get_obstacle(i, j) == TreeID:  # Tree
+                if self.state.mapInfo.get_obstacle(i, j) == 1:  # Tree
                     view[i, j] = -1
-                if self.state.mapInfo.get_obstacle(i, j) == TrapID:  # Trap
+                if self.state.mapInfo.get_obstacle(i, j) == 2:  # Trap
                     view[i, j] = -2
-                if self.state.mapInfo.get_obstacle(i, j) == SwampID: # Swamp
+                if self.state.mapInfo.get_obstacle(i, j) == 3: # Swamp
                     view[i, j] = -3
                 if self.state.mapInfo.gold_amount(i, j) > 0:
                     view[i, j] = 5
