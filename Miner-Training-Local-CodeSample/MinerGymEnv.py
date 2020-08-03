@@ -36,12 +36,15 @@ class MinerGymEnv(gym.Env):
     def render(self, mode='human', close=False):
         pass
 
-    def reset(self):
+    def reset(self, current_eps):
 
-        mapID = np.random.randint(1, 6)
+        mapID = 1 #np.random.randint(1, 6)
         posID_x = np.random.randint(21)
         posID_y = np.random.randint(9)
-        request = ("map" + str(mapID) + "," + str(posID_x) + "," + str(posID_y) + ",50,100")
+        if current_eps > 0.1:
+          request = ("map" + str(mapID) + "," + str(posID_x) + "," + str(posID_y) + ",50,150")
+        else:
+          request = ("map" + str(mapID) + "," + str(posID_x) + "," + str(posID_y) + ",50,100")
         self.minerEnv.send_map_info(request)
         self.minerEnv.reset()
         state= self.get_state()
