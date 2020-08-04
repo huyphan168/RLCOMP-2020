@@ -47,7 +47,7 @@ class Bot_ver1:
         self.info = PlayerInfo(id)
         self.dqn = Network(198, 6)
         self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
-        self.dqn.load_state_dict(torch.load("/content/AGENT1_30000.pth"))
+        self.dqn.load_state_dict(torch.load("/content/AGENT1_40000.pth"))
         print("Model loaded for bot 1")
         self.dqn.to(self.device)
     def next_action(self):
