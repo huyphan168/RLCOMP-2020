@@ -3,8 +3,8 @@ from array import *
 import json
 import os
 import math
-from bot1 import Bot_ver1
-from bot2 import Bot_ver2
+from bot1 import Bot1
+from bot2 import Bot2
 from bot3 import Bot3
 from random import randrange
 
@@ -119,7 +119,7 @@ class GameSocket:
         self.craftMap = {}  # cells that players craft at current step, key: x_y, value: number of players that craft at (x,y)
 
     def init_bots(self):
-        self.bots = [Bot_ver1(2), Bot_ver2(3), Bot3(4)]  # use bot1(id=2), bot2(id=3), bot3(id=4)
+        self.bots = [Bot1(2), Bot2(3), Bot3(4)]  # use bot1(id=2), bot2(id=3), bot3(id=4)
         for (bot) in self.bots:  # at the beginning, all bots will have same position, energy as player
             bot.info.posx = self.user.posx
             bot.info.posy = self.user.posy

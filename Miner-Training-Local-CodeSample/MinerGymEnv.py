@@ -68,7 +68,7 @@ class MinerGymEnv(gym.Env):
 
 
     def reset(self, current_eps):
-        mapID = 1 #np.random.randint(1, 6)
+        mapID = 2 #np.random.randint(1, 6)
         posID_x = 19 #np.random.randint(21)
         posID_y = 8 #np.random.randint(9)
         if current_eps > 0.1:
