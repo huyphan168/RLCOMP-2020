@@ -46,7 +46,7 @@ class MinerGymEnv(gym.Env):
     def render(self, mode='human'):
         img = cv2.imread("/content/map1.png")
         for player in self.minerEnv.state.players:
-          if player['playerId'] == 1:
+          if player['playerId'] in [1,2:
             id = player['playerId']
             score = player['score']
             engergy = player['energy']
