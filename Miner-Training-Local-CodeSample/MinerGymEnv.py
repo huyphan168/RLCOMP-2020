@@ -11,7 +11,6 @@ import cv2
 from prettytable import PrettyTable
 from PIL import ImageFont, ImageDraw, Image
 from google.colab.patches import cv2_imshow
-font = ImageFont.truetype("/content/Roboto-Regular.ttf", 15)
 
 
 from MinerEnv import MinerEnv
