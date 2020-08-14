@@ -44,9 +44,9 @@ class MinerGymEnv(gym.Env):
         return ob, reward, episode_over, {'score':self.minerEnv.state.score ,'action':action}
 
     def render(self, mode='human'):
-        img = cv2.imread("/content/map1.png")
+        img = cv2.imread("/content/map2.png")
         for player in self.minerEnv.state.players:
-          if player['playerId'] in [1,2:
+          if player['playerId'] in [1,2]:
             id = player['playerId']
             score = player['score']
             engergy = player['energy']

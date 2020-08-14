@@ -3,7 +3,7 @@ from array import *
 import json
 import os
 import math
-from bot1 import Bot1
+from bot_hau import Bot1
 from bot2 import Bot2
 from bot3 import Bot3
 from random import randrange
