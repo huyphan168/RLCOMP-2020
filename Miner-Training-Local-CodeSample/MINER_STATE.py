@@ -68,8 +68,8 @@ class MapInfo:
     def get_obstacle(self, x, y):  # Get the kind of the obstacle at cell(x,y)
         for cell in self.obstacles:
             if x == cell["posx"] and y == cell["posy"]:
-                return cell["type"]
-        return -1  # No obstacle at the cell (x,y)
+                return cell["type"], cell["value"]
+        return -1,-1  # No obstacle at the cell (x,y)
 
 
 class State:

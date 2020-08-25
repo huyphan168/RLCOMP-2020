@@ -43,30 +43,69 @@ class MinerEnv:
     # Functions are customized by client
     def get_state(self):
         # Building the map
-        view = np.zeros([self.state.mapInfo.max_x + 1, self.state.mapInfo.max_y + 1], dtype=int)
+        channel_1 = np.zeros([self.state.mapInfo.max_x + 1, self.state.mapInfo.max_y + 1], dtype=int)
         for i in range(self.state.mapInfo.max_x + 1):
             for j in range(self.state.mapInfo.max_y + 1):
-                if self.state.mapInfo.get_obstacle(i, j) == TreeID:  # Tree
-                    view[i, j] = -1
-                if self.state.mapInfo.get_obstacle(i, j) == TrapID:  # Trap
-                    view[i, j] = -2
-                if self.state.mapInfo.get_obstacle(i, j) == SwampID: # Swamp
-                    view[i, j] = -3
+                obs_id, val = self.state.mapInfo.get_obstacle(i, j)
+                if obs_id == TreeID:  # Tree
+                    channel_1[i, j] = 0.3
+                if obs_id == TrapID:  # Trap
+                    channel_1[i, j] = 0.6
+        
+        channel_2 = np.zeros([self.state.mapInfo.max_x + 1, self.state.mapInfo.max_y + 1], dtype=int)
+        for i in range(self.state.mapInfo.max_x + 1):
+            for j in range(self.state.mapInfo.max_y + 1):
+                obs_id, val = self.state.mapInfo.get_obstacle(i, j)
+                if obs_id == SwampID:  # Tree
+                    if abs(val) == -5:
+                      channel_2[i, j] = 0.1
+                    if abs(val) == -20:
+                      channel_2[i, j] = 0.4
+                    if abs(val) > 20:
+                      channel_2[i, j] = 0.8
+        channel_3 = np.zeros([self.state.mapInfo.max_x + 1, self.state.mapInfo.max_y + 1], dtype=int)
+        for i in range(self.state.mapInfo.max_x + 1):
+            for j in range(self.state.mapInfo.max_y + 1): 
                 if self.state.mapInfo.gold_amount(i, j) > 0:
-                    view[i, j] = 5
-
-        DQNState = view.flatten().tolist() #Flattening the map matrix to a vector
-        DQNState.append(self.state.x)
-        DQNState.append(self.state.y)
-        # Add position and energy of agent to the DQNState
-        DQNState.append(self.state.energy)
+                  channel_3[i, j] = float(self.state.mapInfo.gold_amount(i, j)/1600)
+        
+        channel_4 = np.zeros([self.state.mapInfo.max_x + 1, self.state.mapInfo.max_y + 1], dtype=int)
+        for i in range(self.state.mapInfo.max_x + 1):
+            for j in range(self.state.mapInfo.max_y + 1):
+                if self.state.x in range(21) and self.state.y in range(9):
+                  channel_4[self.state.x, self.state.y] = 1
+        X = []
+        Y = []
         for player in self.state.players:
             if player["playerId"] != self.state.id:
-                DQNState.append(player["posx"])
-                DQNState.append(player["posy"])
-        #Convert the DQNState from list to array for training
-        DQNState = np.array(DQNState)
+                X.append(player["posx"])
+                Y.append(player["posy"])
+        
+        channel_5 = np.zeros([self.state.mapInfo.max_x + 1, self.state.mapInfo.max_y + 1], dtype=int)
+        for i in range(self.state.mapInfo.max_x + 1):
+            for j in range(self.state.mapInfo.max_y + 1):
+                if X[0] in range(21) and Y[0] in range(9):
+                  channel_5[X[0], Y[0]] = 1 
 
+        channel_6 = np.zeros([self.state.mapInfo.max_x + 1, self.state.mapInfo.max_y + 1], dtype=int)
+        for i in range(self.state.mapInfo.max_x + 1):
+            for j in range(self.state.mapInfo.max_y + 1):
+                if X[1] in range(21) and Y[1] in range(9):
+                  channel_6[X[1], Y[1]] = 1
+      
+        channel_7 = np.zeros([self.state.mapInfo.max_x + 1, self.state.mapInfo.max_y + 1], dtype=int)
+        for i in range(self.state.mapInfo.max_x + 1):
+            for j in range(self.state.mapInfo.max_y + 1):
+                if X[2] in range(21) and Y[2] in range(9):
+                  channel_7[X[2], Y[2]] = 1
+        
+        channel_8 = np.zeros([self.state.mapInfo.max_x + 1, self.state.mapInfo.max_y + 1], dtype=int)
+        for i in range(self.state.mapInfo.max_x + 1):
+            for j in range(self.state.mapInfo.max_y + 1):
+                channel_8[i, j] = float(self.state.energy/50)
+        DQNState = np.dstack([channel_1, channel_2, channel_3, channel_4, channel_5,
+                                          channel_6, channel_7, channel_8])
+        DQNState = np.rollaxis(DQNState, 2, 0)
         return DQNState
 
     def get_reward(self):
@@ -78,14 +117,21 @@ class MinerEnv:
           reward += 5
         if score_action <= 0 and self.state.lastAction == 5:
           reward -= 2
-        if self.state.mapInfo.get_obstacle(self.state.x, self.state.y) not in [1,2,3] and self.state.lastAction != 4:
-          reward += 0.5
-        if self.state.mapInfo.get_obstacle(self.state.x, self.state.y) == TreeID:  # Tree
-            reward -= 1
-        if self.state.mapInfo.get_obstacle(self.state.x, self.state.y) == TrapID:  # Trap
+        obs_id, value = self.state.mapInfo.get_obstacle(self.state.x, self.state.y)
+        if obs_id not in [1,2,3] and self.state.lastAction != 4:
+            reward += 0.5
+        if obs_id == TreeID:  # Tree
             reward -= 2
-        if self.state.mapInfo.get_obstacle(self.state.x, self.state.y) == SwampID:  # Swamp
-            reward -= 3
+        if obs_id == TrapID:  # Trap
+            reward -= 2
+        if obs_id == SwampID:  # Swamp
+          if abs(value) <= -5:
+            reward -= 0.5
+          if 15 <= abs(value) <= 40:
+            reward -= 4
+          if abs(value) > 40:
+            reward -= 6
+        
         # if self.state.mapInfo.is_row_has_gold(self.state.x):
         #   if self.state.lastAction in [2,3]:
         #     reward += 1
@@ -100,15 +146,11 @@ class MinerEnv:
           reward -= 3
         if self.state.lastAction == 4:
           reward += 1.25
-        
-        # If out of the map, then the DQN agent should be punished by a larger nagative reward.
         if self.state.status == State.STATUS_ELIMINATED_WENT_OUT_MAP:
-            reward += -15
+            reward += -10
         if self.state.status == State.STATUS_ELIMINATED_OUT_OF_ENERGY:
-            reward += -5
-            
-        # print ("reward",reward)
-        return reward
+            reward += -5    
+        return np.sign(reward)*np.log(1 + abs(reward))
 
     def check_terminate(self):
         #Checking the status of the game
