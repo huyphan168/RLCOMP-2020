@@ -67,7 +67,7 @@ class MinerGymEnv(gym.Env):
 
 
     def reset(self):
-        mapID = np.random.randint(1, 6)
+        mapID = 1
         posID_x = np.random.randint(21)
         posID_y = np.random.randint(9)
         request = ("map" + str(mapID) + "," + str(posID_x) + "," + str(posID_y) + ",50,100")

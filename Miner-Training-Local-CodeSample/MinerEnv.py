@@ -43,7 +43,7 @@ class MinerEnv:
     # Functions are customized by client
     def get_state(self):
         # Building the map
-        channel_1 = np.zeros([self.state.mapInfo.max_x + 1, self.state.mapInfo.max_y + 1], dtype=int)
+        channel_1 = np.full([self.state.mapInfo.max_x + 1, self.state.mapInfo.max_y + 1], 0.05)
         for i in range(self.state.mapInfo.max_x + 1):
             for j in range(self.state.mapInfo.max_y + 1):
                 obs_id, val = self.state.mapInfo.get_obstacle(i, j)
@@ -51,29 +51,30 @@ class MinerEnv:
                     channel_1[i, j] = 0.3
                 if obs_id == TrapID:  # Trap
                     channel_1[i, j] = 0.6
-        
-        channel_2 = np.zeros([self.state.mapInfo.max_x + 1, self.state.mapInfo.max_y + 1], dtype=int)
-        for i in range(self.state.mapInfo.max_x + 1):
-            for j in range(self.state.mapInfo.max_y + 1):
-                obs_id, val = self.state.mapInfo.get_obstacle(i, j)
                 if obs_id == SwampID:  # Tree
                     if abs(val) == -5:
-                      channel_2[i, j] = 0.1
+                      channel_1[i, j] = 0.2
                     if abs(val) == -20:
-                      channel_2[i, j] = 0.4
+                      channel_1[i, j] = 0.4
                     if abs(val) > 20:
-                      channel_2[i, j] = 0.8
-        channel_3 = np.zeros([self.state.mapInfo.max_x + 1, self.state.mapInfo.max_y + 1], dtype=int)
+                      channel_1[i, j] = 0.8
+        
+        channel_2 = np.full([self.state.mapInfo.max_x + 1, self.state.mapInfo.max_y + 1], 0.05)
         for i in range(self.state.mapInfo.max_x + 1):
             for j in range(self.state.mapInfo.max_y + 1): 
                 if self.state.mapInfo.gold_amount(i, j) > 0:
-                  channel_3[i, j] = float(self.state.mapInfo.gold_amount(i, j)/1600)
+                    if self.state.mapInfo.gold_amount(i, j) < 500: 
+                      channel_2[i, j] = 0.3
+                    if 900 > self.state.mapInfo.gold_amount(i,j) >= 500:
+                      channel_2[i, j] = 0.6
+                    if self.state.mapInfo.gold_amount(i, j) >= 900:
+                      channel_2[i, j] = 1
         
-        channel_4 = np.zeros([self.state.mapInfo.max_x + 1, self.state.mapInfo.max_y + 1], dtype=int)
+        channel_3 = np.full([self.state.mapInfo.max_x + 1, self.state.mapInfo.max_y + 1], 0.05)
         for i in range(self.state.mapInfo.max_x + 1):
             for j in range(self.state.mapInfo.max_y + 1):
                 if self.state.x in range(21) and self.state.y in range(9):
-                  channel_4[self.state.x, self.state.y] = 1
+                  channel_3[self.state.x, self.state.y] = 1
         X = []
         Y = []
         for player in self.state.players:
@@ -81,30 +82,30 @@ class MinerEnv:
                 X.append(player["posx"])
                 Y.append(player["posy"])
         
-        channel_5 = np.zeros([self.state.mapInfo.max_x + 1, self.state.mapInfo.max_y + 1], dtype=int)
+        channel_4 = np.full([self.state.mapInfo.max_x + 1, self.state.mapInfo.max_y + 1], 0.05)
         for i in range(self.state.mapInfo.max_x + 1):
             for j in range(self.state.mapInfo.max_y + 1):
                 if X[0] in range(21) and Y[0] in range(9):
-                  channel_5[X[0], Y[0]] = 1 
+                  channel_4[X[0], Y[0]] = 1 
 
-        channel_6 = np.zeros([self.state.mapInfo.max_x + 1, self.state.mapInfo.max_y + 1], dtype=int)
+        channel_5 = np.full([self.state.mapInfo.max_x + 1, self.state.mapInfo.max_y + 1], 0.05)
         for i in range(self.state.mapInfo.max_x + 1):
             for j in range(self.state.mapInfo.max_y + 1):
                 if X[1] in range(21) and Y[1] in range(9):
-                  channel_6[X[1], Y[1]] = 1
+                  channel_5[X[1], Y[1]] = 1
       
-        channel_7 = np.zeros([self.state.mapInfo.max_x + 1, self.state.mapInfo.max_y + 1], dtype=int)
+        channel_6 = np.full([self.state.mapInfo.max_x + 1, self.state.mapInfo.max_y + 1], 0.05)
         for i in range(self.state.mapInfo.max_x + 1):
             for j in range(self.state.mapInfo.max_y + 1):
                 if X[2] in range(21) and Y[2] in range(9):
-                  channel_7[X[2], Y[2]] = 1
+                  channel_6[X[2], Y[2]] = 1
         
-        channel_8 = np.zeros([self.state.mapInfo.max_x + 1, self.state.mapInfo.max_y + 1], dtype=int)
+        channel_7 = np.full([self.state.mapInfo.max_x + 1, self.state.mapInfo.max_y + 1], 0.05)
         for i in range(self.state.mapInfo.max_x + 1):
             for j in range(self.state.mapInfo.max_y + 1):
-                channel_8[i, j] = float(self.state.energy/50)
+                channel_7[i, j] = float(self.state.energy/50)
         DQNState = np.dstack([channel_1, channel_2, channel_3, channel_4, channel_5,
-                                          channel_6, channel_7, channel_8])
+                                                    channel_6, channel_7])
         DQNState = np.rollaxis(DQNState, 2, 0)
         return DQNState
 
@@ -114,7 +115,7 @@ class MinerEnv:
         score_action = self.state.score - self.score_pre
         self.score_pre = int(self.state.score)
         if score_action > 0 and self.state.lastAction == 5:
-          reward += 5
+          reward += 6.25
         if score_action <= 0 and self.state.lastAction == 5:
           reward -= 2
         obs_id, value = self.state.mapInfo.get_obstacle(self.state.x, self.state.y)
@@ -143,9 +144,9 @@ class MinerEnv:
         #   else:
         #     reward += 0.5
         if self.state.lastAction == 4 and self.state.energy > 40:
-          reward -= 3
+          reward -= 4
         if self.state.lastAction == 4:
-          reward += 1.25
+          reward += 1.75
         if self.state.status == State.STATUS_ELIMINATED_WENT_OUT_MAP:
             reward += -10
         if self.state.status == State.STATUS_ELIMINATED_OUT_OF_ENERGY:
