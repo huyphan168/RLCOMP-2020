@@ -1,4 +1,4 @@
-# rl-huy
+# rl competition 
 This is my solution for RLCOMP2020 reaching top 10. We used many approaches and different techniques including variations  of deep q learning, imitation learning. 
 After a month of testing and researching, I found that the key component of initial agent is the use of CNN. Because of difference between maps, so using 2D state would result a 
 robust performance and generalize well across maps. Secondly, I tested many smaller combinations of RAINBOW algorithm, and the conbination including double deep q learning,
